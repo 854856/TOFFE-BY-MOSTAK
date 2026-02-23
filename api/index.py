@@ -171,6 +171,4 @@ def execute_proxy(url):
     except:
         return "Stream Error", 500
 
-if __name__ == '__main__':
-    refresh_session()
-    app.run()
+refresh_session()
