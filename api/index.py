@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 app = Flask(__name__)
 client = requests.Session()
 
-# Debug info store korar jonno
 debug_info = {
     "last_refresh": "Never",
     "status": "Initializing",
@@ -14,7 +13,7 @@ debug_info = {
     "cookies_found": {}
 }
 
-# Static Fallback Cookie (Jodi auto fail kore)
+# Jekhetu Auto-Cookie kaj korche na (Vercel IP Blocked), ei Cookie tai ashol. Expire hole eita change korben.
 FALLBACK_COOKIE = "Edge-Cache-Cookie=URLPrefix=aHR0cHM6Ly9ibGRjbXByb2QtY2RuLnRvZmZlZWxpdmUuY29t:Expires=1771927793:KeyName=prod_linear:Signature=mmxHt_ttcVgH3693d9c5EIGfVhH34xSHljuGSIipfM1970qE_szW-a3ZRVDNhF9SywWpzUEZ4z1wDUhAOX2sAg"
 
 BASE_HEADERS = {
@@ -23,26 +22,30 @@ BASE_HEADERS = {
     "Origin": "https://toffeelive.com",
 }
 
-CHANNELS = [
-    {"name": "Somoy TV", "id": "slang/somoy_tv_320/somoy_tv_320.m3u8?bitrate=768000"},
-    {"name": "Jamuna TV HD", "id": "slang/jamuna_tv_576/jamuna_tv_576.m3u8?bitrate=1000000"},
-    {"name": "Independent HD", "id": "slang/independent_tv_576/independent_tv_576.m3u8?bitrate=1000000"},
-    {"name": "Sony Sports 1 HD", "id": "sony_sports_1_hd/playlist.m3u8"},
-    {"name": "Sony Sports 2 HD", "id": "sony_sports_2_hd/playlist.m3u8"},
-    {"name": "Sony Sports 5 HD", "id": "sony_sports_5_hd/playlist.m3u8"},
-    {"name": "Ten Cricket", "id": "ten_cricket/playlist.m3u8"},
-    {"name": "Sony BBC Earth HD", "id": "sonybbc_earth_hd/playlist.m3u8"},
-    {"name": "Sony Yay", "id": "sonyyay/playlist.m3u8"},
-    {"name": "Sony Aath", "id": "sonyaath/playlist.m3u8"},
-    {"name": "And TV HD", "id": "and_tv_hd/playlist.m3u8"},
-    {"name": "Ekhon TV", "id": "ekhon_tv/playlist.m3u8"},
-    {"name": "Ekattor TV", "id": "ekattor_tv/playlist.m3u8"},
-    {"name": "Nexus TV", "id": "nexus_tv/playlist.m3u8"},
-    {"name": "Mohona TV", "id": "mohona_tv/playlist.m3u8"},
-    {"name": "Desh TV", "id": "desh_tv/playlist.m3u8"},
-    {"name": "Global TV", "id": "global_tv/playlist.m3u8"},
-    {"name": "Asian TV", "id": "asian_tv/playlist.m3u8"}
-]
+# Ekebare Clean IDs mapped with exact paths
+CHANNEL_MAP = {
+    "somoy_tv": "slang/somoy_tv_320/somoy_tv_320.m3u8?bitrate=768000",
+    "jamuna_tv": "slang/jamuna_tv_576/jamuna_tv_576.m3u8?bitrate=1000000",
+    "independent_tv": "slang/independent_tv_576/independent_tv_576.m3u8?bitrate=1000000",
+    "movie_bangla": "slang/movie_bangla_576/movie_bangla_576.m3u8?bitrate=1000000",
+    "anandatv": "anandatv/playlist.m3u8",
+    "sony_sports_1": "sony_sports_1_hd/playlist.m3u8",
+    "sony_sports_2": "sony_sports_2_hd/playlist.m3u8",
+    "sony_sports_5": "sony_sports_5_hd/playlist.m3u8",
+    "ten_cricket": "ten_cricket/playlist.m3u8",
+    "sonybbc_earth": "sonybbc_earth_hd/playlist.m3u8",
+    "sonyyay": "sonyyay/playlist.m3u8",
+    "sonyaath": "sonyaath/playlist.m3u8",
+    "and_tv": "and_tv_hd/playlist.m3u8",
+    "ekhon_tv": "ekhon_tv/playlist.m3u8",
+    "ekattor_tv": "ekattor_tv/playlist.m3u8",
+    "nexus_tv": "nexus_tv/playlist.m3u8",
+    "mohona_tv": "mohona_tv/playlist.m3u8",
+    "desh_tv": "desh_tv/playlist.m3u8",
+    "global_tv": "global_tv/playlist.m3u8",
+    "asian_tv": "asian_tv/playlist.m3u8",
+    "toffee_movie": "toffee_movie/playlist.m3u8"
+}
 
 def refresh_session():
     try:
@@ -54,7 +57,7 @@ def refresh_session():
             debug_info["status"] = "Auto Cookie Success"
             debug_info["using_fallback"] = False
         else:
-            debug_info["status"] = "Fallback Active (No cookie in handshake)"
+            debug_info["status"] = "Fallback Active (Toffee Blocked Vercel IP for Auto Cookie)"
             debug_info["using_fallback"] = True
     except Exception as e:
         debug_info["status"] = f"Handshake Failed: {str(e)}"
@@ -77,7 +80,8 @@ def home():
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
             .card { background: #334155; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; transition: 0.2s; }
             .card:hover { border-color: #38bdf8; background: #1e293b; }
-            .copy-btn { font-size: 11px; color: #38bdf8; font-weight: bold; }
+            .ch-name { font-size: 14px; font-weight: bold; }
+            .ch-id { font-size: 10px; color: #94a3b8; }
             .debug-link { display: block; text-align: center; margin-top: 25px; color: #94a3b8; text-decoration: none; font-size: 13px; }
         </style>
     </head>
@@ -85,12 +89,15 @@ def home():
         <div class="container">
             <h1>MOSTAK PROXY</h1>
             <p style="text-align:center; color:#94a3b8; font-size:14px;">High Quality Toffee Live Streaming</p>
-            <div class="usage">Endpoint:<br> {{ host }}/Mostak?id=CHANNEL_ID</div>
+            <div class="usage">Endpoint Example:<br> <span style="color:#38bdf8;">{{ host }}/Mostak?id=somoy_tv</span></div>
             <div class="grid">
-                {% for ch in channels %}
-                <div class="card" onclick="copy('{{ ch.id }}')">
-                    <span style="font-size:14px;">{{ ch.name }}</span>
-                    <span class="copy-btn">COPY LINK</span>
+                {% for key, val in channels.items() %}
+                <div class="card" onclick="copy('{{ key }}')">
+                    <div>
+                        <div class="ch-name">{{ key | replace('_', ' ') | title }}</div>
+                        <div class="ch-id">id: {{ key }}</div>
+                    </div>
+                    <span style="font-size: 11px; color: #38bdf8; font-weight: bold;">COPY</span>
                 </div>
                 {% endfor %}
             </div>
@@ -100,13 +107,13 @@ def home():
             function copy(id) {
                 const url = "{{ host }}/Mostak?id=" + id;
                 navigator.clipboard.writeText(url);
-                alert('Stream link copied!');
+                alert('Stream link copied!\\nURL: ' + url);
             }
         </script>
     </body>
     </html>
     """
-    return render_template_string(html, channels=CHANNELS, host=request.host_url.rstrip('/'))
+    return render_template_string(html, channels=CHANNEL_MAP, host=request.host_url.rstrip('/'))
 
 @app.route('/debug')
 def debug():
@@ -118,8 +125,9 @@ def debug():
         <p>Current Status: {debug_info['status']}</p>
         <p>Using Fallback: {debug_info['using_fallback']}</p>
         <hr border="1" color="#333">
-        <p>Session Cookies:</p>
-        <pre style="background:#111; padding:15px; overflow-x: auto;">{debug_info['cookies_found']}</pre>
+        <p>Session Cookies (What Toffee gave us):</p>
+        <pre style="background:#111; padding:15px; overflow-x: auto; color:#fff;">{debug_info['cookies_found']}</pre>
+        <p style="color:#ff4444;">* Note: If 'Edge-Cache-Cookie' is not in the list above, Toffee blocked Vercel IP. You MUST update the fallback cookie manually.</p>
         <br>
         <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer; background:#333; color:#0f0; border:none;">RE-CHECK</button>
         <a href="/" style="color:#fff; margin-left:20px; text-decoration:none;">BACK HOME</a>
@@ -130,10 +138,14 @@ def debug():
 def stream_handler():
     chid = request.args.get('id')
     if not chid: return home()
-    if "slang" in chid or ".m3u8" in chid:
-        url = f"https://bldcmprod-cdn.toffeelive.com/cdn/live/{chid}"
+    
+    # Check if user typed a mapped ID (e.g. 'somoy_tv')
+    if chid in CHANNEL_MAP:
+        url = f"https://bldcmprod-cdn.toffeelive.com/cdn/live/{CHANNEL_MAP[chid]}"
     else:
+        # Fallback for dynamic/unknown channels (e.g. 'anandatv')
         url = f"https://bldcmprod-cdn.toffeelive.com/cdn/live/{chid}/playlist.m3u8"
+        
     return execute_proxy(url)
 
 @app.route('/proxy')
@@ -145,17 +157,11 @@ def proxy_handler():
 def execute_proxy(url):
     try:
         headers = BASE_HEADERS.copy()
-        if debug_info["using_fallback"] or 'Edge-Cache-Cookie' not in client.cookies:
-            headers['Cookie'] = FALLBACK_COOKIE
+        # Vercel IP khaoay auto kaj korbe na, tai Fallback oboshshoi dite hobe
+        headers['Cookie'] = FALLBACK_COOKIE
         
         r = client.get(url, headers=headers, timeout=15)
-        # 403 asle cookie expire hoyeche, tai abar refresh korbe
-        if r.status_code == 403:
-            refresh_session()
-            if debug_info["using_fallback"]:
-                headers['Cookie'] = FALLBACK_COOKIE
-            r = client.get(url, headers=headers, timeout=15)
-
+        
         if ".m3u8" in url:
             lines = r.text.split('\n')
             refined = []
@@ -174,9 +180,7 @@ def execute_proxy(url):
     except Exception as e:
         return f"Stream Error: {str(e)}", 500
 
-# Server start howar shathe session create korbe
 refresh_session()
 
-# Vercel er jonno eita dorkar
 if __name__ == '__main__':
     app.run()
