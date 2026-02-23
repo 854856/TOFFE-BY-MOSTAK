@@ -73,7 +73,7 @@ def home():
             body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; }
             .container { max-width: 650px; width: 100%; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
             h1 { color: #38bdf8; text-align: center; font-size: 28px; margin-bottom: 5px; }
-            .usage { background: #0f172a; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #38bdf8; font-family: monospace; font-size: 13px; }
+            .usage { background: #0f172a; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #38bdf8; font-family: monospace; font-size: 13px; word-break: break-all; }
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
             .card { background: #334155; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; transition: 0.2s; }
             .card:hover { border-color: #38bdf8; background: #1e293b; }
@@ -85,7 +85,7 @@ def home():
         <div class="container">
             <h1>MOSTAK PROXY</h1>
             <p style="text-align:center; color:#94a3b8; font-size:14px;">High Quality Toffee Live Streaming</p>
-            <div class="usage">Endpoint: {{ host }}/Mostak?id=CHANNEL_ID</div>
+            <div class="usage">Endpoint:<br> {{ host }}/Mostak?id=CHANNEL_ID</div>
             <div class="grid">
                 {% for ch in channels %}
                 <div class="card" onclick="copy('{{ ch.id }}')">
@@ -119,7 +119,7 @@ def debug():
         <p>Using Fallback: {debug_info['using_fallback']}</p>
         <hr border="1" color="#333">
         <p>Session Cookies:</p>
-        <pre style="background:#111; padding:15px;">{debug_info['cookies_found']}</pre>
+        <pre style="background:#111; padding:15px; overflow-x: auto;">{debug_info['cookies_found']}</pre>
         <br>
         <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">RE-CHECK</button>
         <a href="/" style="color:#fff; margin-left:20px;">BACK HOME</a>
@@ -151,6 +151,8 @@ def execute_proxy(url):
         r = client.get(url, headers=headers, timeout=15)
         if r.status_code == 403:
             refresh_session()
+            if debug_info["using_fallback"]:
+                headers['Cookie'] = FALLBACK_COOKIE
             r = client.get(url, headers=headers, timeout=15)
 
         if ".m3u8" in url:
@@ -171,4 +173,6 @@ def execute_proxy(url):
     except:
         return "Stream Error", 500
 
-refresh_session()
+# Vercel er jonno eita evabei thakte hobe
+if __name__ == '__main__':
+    app.run()
