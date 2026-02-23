@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 app = Flask(__name__)
 client = requests.Session()
 
+# Debug info store korar jonno
 debug_info = {
     "last_refresh": "Never",
     "status": "Initializing",
@@ -13,7 +14,7 @@ debug_info = {
     "cookies_found": {}
 }
 
-# Static Fallback Cookie
+# Static Fallback Cookie (Jodi auto fail kore)
 FALLBACK_COOKIE = "Edge-Cache-Cookie=URLPrefix=aHR0cHM6Ly9ibGRjbXByb2QtY2RuLnRvZmZlZWxpdmUuY29t:Expires=1771927793:KeyName=prod_linear:Signature=mmxHt_ttcVgH3693d9c5EIGfVhH34xSHljuGSIipfM1970qE_szW-a3ZRVDNhF9SywWpzUEZ4z1wDUhAOX2sAg"
 
 BASE_HEADERS = {
@@ -53,10 +54,10 @@ def refresh_session():
             debug_info["status"] = "Auto Cookie Success"
             debug_info["using_fallback"] = False
         else:
-            debug_info["status"] = "Fallback Active"
+            debug_info["status"] = "Fallback Active (No cookie in handshake)"
             debug_info["using_fallback"] = True
-    except:
-        debug_info["status"] = "Handshake Failed"
+    except Exception as e:
+        debug_info["status"] = f"Handshake Failed: {str(e)}"
         debug_info["using_fallback"] = True
 
 @app.route('/')
@@ -68,9 +69,8 @@ def home():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Mostak Proxy</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
         <style>
-            body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; }
+            body { font-family: sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; }
             .container { max-width: 650px; width: 100%; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
             h1 { color: #38bdf8; text-align: center; font-size: 28px; margin-bottom: 5px; }
             .usage { background: #0f172a; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #38bdf8; font-family: monospace; font-size: 13px; word-break: break-all; }
@@ -121,8 +121,8 @@ def debug():
         <p>Session Cookies:</p>
         <pre style="background:#111; padding:15px; overflow-x: auto;">{debug_info['cookies_found']}</pre>
         <br>
-        <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">RE-CHECK</button>
-        <a href="/" style="color:#fff; margin-left:20px;">BACK HOME</a>
+        <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer; background:#333; color:#0f0; border:none;">RE-CHECK</button>
+        <a href="/" style="color:#fff; margin-left:20px; text-decoration:none;">BACK HOME</a>
     </body>
     """
 
@@ -149,6 +149,7 @@ def execute_proxy(url):
             headers['Cookie'] = FALLBACK_COOKIE
         
         r = client.get(url, headers=headers, timeout=15)
+        # 403 asle cookie expire hoyeche, tai abar refresh korbe
         if r.status_code == 403:
             refresh_session()
             if debug_info["using_fallback"]:
@@ -170,9 +171,12 @@ def execute_proxy(url):
                 refined.append(line)
             return Response('\n'.join(refined), mimetype='application/vnd.apple.mpegurl')
         return Response(r.content, mimetype=r.headers.get('Content-Type'))
-    except:
-        return "Stream Error", 500
+    except Exception as e:
+        return f"Stream Error: {str(e)}", 500
 
-# Vercel er jonno eita evabei thakte hobe
+# Server start howar shathe session create korbe
+refresh_session()
+
+# Vercel er jonno eita dorkar
 if __name__ == '__main__':
     app.run()
